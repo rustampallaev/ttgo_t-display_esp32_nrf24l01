@@ -5,6 +5,7 @@
 
 #include "delay.h"
 #include "radio.h"
+#include "display.h"
 
 #ifdef CONFIG_IDF_TARGET_ESP32
 #define CHIP_NAME "ESP32"
@@ -32,5 +33,6 @@ void app_main(void)
             (chip_info.features & CHIP_FEATURE_EMB_FLASH) ? "embedded" : "external");
     
 
-    radio_start();
+    display_init();
+    //radio_start();
 }

@@ -16,11 +16,6 @@
 #define     NRF_MOSI    (1)
 #define     NRF_MISO    (1)
 
-#ifdef MODE_SENDER
-static nrf_mode_t m_mode = nrf_tx_mode;
-#else
-static nrf_mode_t m_mode = nrf_rx_mode;
-#endif
 
 static void radio_thread(void * pvParameters);
 
@@ -38,41 +33,41 @@ static void radio_thread(void * pvParameters)
 
     printf("radio_thread\n");
 
-    nrf_init(NRF_CE, NRF_CS, NRF_SCK, NRF_MOSI, NRF_MISO, m_mode);
+#ifdef MODE_SENDER
+    nrf_init(NRF_CE, NRF_CS, NRF_SCK, NRF_MOSI, NRF_MISO, nrf_tx_mode);
+#else
+    nrf_init(NRF_CE, NRF_CS, NRF_SCK, NRF_MOSI, NRF_MISO, nrf_rx_mode);
+#endif
+    
     nrf_set_pipe_addr(0, addr, 5);
+    
+#ifdef MODE_SENDER
+    printf("Tx mode\n");
+    nrf_set_tx_addr(addr, 5);
 
-    if(m_mode == nrf_tx_mode) {
-		printf("Tx mode\n");
-        nrf_set_tx_addr(addr, 5);
+    for(int i = 0; i < 32; i++)
+        buff[i] = i;
 
-        for(int i = 0; i < 32; i++)
-            buff[i] = i;
-
-        for(;;) {
-            result = nrf_send(buff, 32);
-            buff[1]++;
-            
-            printf("Result: %d\n", result);
-            delay_rtos(500);
-        }
-    } else if(m_mode == nrf_rx_mode) {
-		printf("Rx mode\n");
-        for(;;) {
-            delay_rtos(10);
-
-            if (!nrf_is_rx_data_available())
-                continue;
-            
-            nrf_read(buff, 32);
-            printf("Received: ");
-			for(int i = 0; i < 32; i++)
-			    printf("%d ", buff[i]);
-			printf("\n");
-        }
-	} else {
-        printf("unknown mode\n");
-        for(;;) {
-            delay_rtos(1000);
-        }
+    for(;;) {
+        result = nrf_send(buff, 32);
+        buff[1]++;
+        
+        printf("Result: %d\n", result);
+        delay_rtos(1500);
     }
+#elif
+    printf("Rx mode\n");
+    for(;;) {
+        delay_rtos(10);
+
+        if (!nrf_is_rx_data_available())
+            continue;
+        
+        nrf_read(buff, 32);
+        printf("Received: ");
+        for(int i = 0; i < 32; i++)
+            printf("%d ", buff[i]);
+        printf("\n");
+    }
+#endif
 }
